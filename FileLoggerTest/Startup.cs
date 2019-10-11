@@ -1,6 +1,7 @@
 ﻿using FileLoggerTest.BackgroundTasks;
 using FileLoggerTest.Constants;
 using FileLoggerTest.Data;
+using FileLoggerTest.Logger;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -8,8 +9,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json.Serialization;
+using System;
 
 namespace FileLoggerTest
 {
@@ -40,7 +43,7 @@ namespace FileLoggerTest
                 });
             });
 
-            service.AddDbContextPool<LoggerDbContext>(options =>
+            service.AddDbContext<LoggerDbContext>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString(AppConstants.ConnectionStrings.LoggerConnection));
             });
@@ -48,12 +51,14 @@ namespace FileLoggerTest
             service.AddHostedService<DbMigrationTask>();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment environment)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment environment, ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
         {
             if (environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            loggerFactory.AddProvider(new DbLoggerProvider(serviceProvider));
 
             app.UseRouting();
 
