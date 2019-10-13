@@ -1,4 +1,5 @@
-﻿using FileLoggerTest.Data;
+﻿
+using FileLoggerTest.Logger.Queue;
 
 using Microsoft.Extensions.Logging;
 
@@ -8,17 +9,17 @@ namespace FileLoggerTest.Logger
 {
     public class DbLoggerProvider : ILoggerProvider
     {
-        private readonly IServiceProvider _serviceProvider;
-        private static readonly DbLogger _logger;
+        private readonly ILogQueue _logQueue;
+        private static DbLogger _logger;
 
-        public DbLoggerProvider(IServiceProvider serviceProvider)
+        public DbLoggerProvider(ILogQueue logQueue)
         {
-            _serviceProvider = serviceProvider;
+            _logQueue = logQueue;
         }
 
         public ILogger CreateLogger(string categoryName)
         {
-            return _logger ?? new DbLogger(_serviceProvider);
+            return _logger ?? (_logger = new DbLogger(_logQueue));
         }
 
         public void Dispose()

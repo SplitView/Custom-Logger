@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FileLoggerTest.Migrations
 {
     [DbContext(typeof(LoggerDbContext))]
-    [Migration("20191011105035_initial")]
+    [Migration("20191013051601_initial")]
     partial class initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -22,10 +22,8 @@ namespace FileLoggerTest.Migrations
 
             modelBuilder.Entity("FileLoggerTest.Models.LogEntity", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("LogLevel")
                         .HasColumnType("int");

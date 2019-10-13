@@ -2,7 +2,7 @@
 using FileLoggerTest.Constants;
 using FileLoggerTest.Data;
 using FileLoggerTest.Logger;
-
+using FileLoggerTest.Logger.Queue;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -47,18 +47,19 @@ namespace FileLoggerTest
             {
                 options.UseSqlServer(Configuration.GetConnectionString(AppConstants.ConnectionStrings.LoggerConnection));
             });
-
+            service.AddSingleton<ILogQueue, LogQueue>();
             service.AddHostedService<DbMigrationTask>();
+            service.AddHostedService<DbLogTask>();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment environment, ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment environment, ILoggerFactory loggerFactory, ILogQueue logQueue)
         {
             if (environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            loggerFactory.AddProvider(new DbLoggerProvider(serviceProvider));
+            loggerFactory.AddProvider(new DbLoggerProvider(logQueue));
 
             app.UseRouting();
 

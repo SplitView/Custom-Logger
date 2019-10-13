@@ -20,7 +20,7 @@ namespace FileLoggerTest.Controllers
         [ProducesDefaultResponseType]
         public IActionResult Get()
         {
-            _logger.LogInformation("Request for home get");
+            _logger.LogWarning("Request for home get");
             return Ok(new { Name = "Sandesh" });
         }
     }
