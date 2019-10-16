@@ -2,9 +2,13 @@
 using FileLoggerTest.Constants;
 using FileLoggerTest.Data;
 using FileLoggerTest.Logger;
+using FileLoggerTest.Queue;
+using FileLoggerTest.Services;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +16,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json.Serialization;
+
 using System;
+using System.Threading.Tasks;
 
 namespace FileLoggerTest
 {
@@ -48,7 +54,10 @@ namespace FileLoggerTest
                 options.UseSqlServer(Configuration.GetConnectionString(AppConstants.ConnectionStrings.LoggerConnection));
             });
 
+            service.AddSingleton<ICosmosDbService>(InitializeCosmosClientInstanceAsync(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
+            service.AddSingleton<ILogQueue, LogQueue>();
             service.AddHostedService<DbMigrationTask>();
+            service.AddHostedService<LoggerTask>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment environment, ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
@@ -69,6 +78,27 @@ namespace FileLoggerTest
                 endpoint.MapControllers();
                 endpoint.MapHealthChecks("/health");
             });
+        }
+
+        /// <summary>
+        /// Creates a Cosmos DB database and a container with the specified partition key. 
+        /// </summary>
+        /// <returns></returns>
+        private static async Task<CosmosDbService> InitializeCosmosClientInstanceAsync(IConfigurationSection configurationSection)
+        {
+            string databaseName = configurationSection.GetSection("DatabaseName").Value;
+            string containerName = configurationSection.GetSection("ContainerName").Value;
+            string account = configurationSection.GetSection("Account").Value;
+            string key = configurationSection.GetSection("Key").Value;
+            CosmosClientBuilder clientBuilder = new CosmosClientBuilder(account, key);
+            CosmosClient client = clientBuilder
+                                .WithConnectionModeDirect()
+                                .Build();
+            CosmosDbService cosmosDbService = new CosmosDbService(client, databaseName, containerName);
+            DatabaseResponse database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
+            await database.Database.CreateContainerIfNotExistsAsync(containerName, "/logLevel");
+
+            return cosmosDbService;
         }
 
     }
